@@ -44,6 +44,11 @@ roslaunch panda_gazebo panda_world.launch
 
 to launch the Gazebo simulation.
 
+Note known dependencies that are not installed from the above instructions are:
+
+```
+pip3 install numba scipy future
+```
 
 ### Speed up Gazebo shutdown
 
