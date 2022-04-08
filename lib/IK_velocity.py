@@ -17,7 +17,11 @@ def IK_velocity(q_in, v_in, omega_in):
     """
 
     ## STUDENT CODE GOES HERE
-
-    dq = np.zeros(7)
-
+    j = calcJacobian(q_in)
+    b = np.concatenate((v_in, omega_in)).reshape((-1, 1))
+    aug = np.concatenate((j, b), axis=1)
+    aug = aug[~np.isnan(aug).any(axis=1)]
+    j = aug[:, :-1]
+    b = aug[:, -1]
+    dq, _, _, _ = np.linalg.lstsq(j, b)
     return dq

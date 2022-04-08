@@ -9,10 +9,26 @@ def calcJacobian(q):
     rows correspond to the linear velocity and the last three rows correspond to
     the angular velocity, expressed in world frame coordinates
     """
-
+    fk = FK()
     J = np.zeros((6, 7))
 
-    ## STUDENT CODE GOES HERE
+    ai_list = fk.compute_Ai(q) #list of ai for all q
+
+    ai = np.identity(4)
+    tranform_matrix = [ai]
+    for i in range(len(ai_list)):
+        ai = ai @ ai_list[i]
+        tranform_matrix.append(ai)
+
+    o_n = []
+    z_n = []
+    for i in range(8):
+        o_n.append(tranform_matrix[i][:3, 3])
+        z_n.append(tranform_matrix[i][:3, 2])
+
+    for i in range(7):
+        J[:3, i] = np.cross(z_n[i], o_n[7] - o_n[i])
+        J[3:, i] = z_n[i]
 
     return J
 

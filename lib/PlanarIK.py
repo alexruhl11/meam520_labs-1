@@ -1,7 +1,7 @@
 import numpy as np
 from math import pi
 
-
+ 
 class PlanarIK:
     """
     Solves the planar IK problem for panda robot arm
@@ -104,7 +104,23 @@ class PlanarIK:
         q3_b = 0
         # **** Student code goes here ****
 
-        return np.array([[q1_a, q2_a, q3_a], [q1_b, q2_b, q3_b]])
+        o_x, o_y = target["o"]
+        theta = target["theta"]
+
+        p2_x, p2_y = o_x - a3 * np.cos(theta), o_y - a3 * np.sin(theta)
+
+        #Answer 1
+        q2_a = np.arccos(
+            (p2_x**2 + p2_y**2 - a1**2 - a2**2) / (2 * a1 * a2)
+        )
+        q1_a = np.arctan2(p2_y, p2_x) - np.arctan2(a2 * np.sin(q2_a), a1 + a2 * np.cos(q2_a))
+        q3_a = theta - (q1_a + q2_a)
 
 
+        #Answer 2
+        q2_b = - q2_a
+        # q1_b = 2 * np.arctan2(p2_y, p2_x) - q1_a3
+        q1_b = np.arctan2(p2_y, p2_x) - np.arctan2(a2 * np.sin(q2_b), a1 + a2 * np.cos(q2_b))
+        q3_b = theta - (q1_b + q2_b)
 
+        return np.array([[q1_a, q2_a, q3_a], [q1_b, q2_b, q3_b]]) % (2 * pi)
