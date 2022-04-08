@@ -69,8 +69,29 @@ class IK:
 
         ## STUDENT CODE STARTS HERE
 
-        displacement = np.zeros(3)
-        axis = np.zeros(3)
+	#Intermediate homogenous
+        intermediate = np.linalg.inv(current)@target
+
+        #Seperating the rotation and displacement information
+        int_disp = target[0:3, 3] - current[0:3, 3]
+        int_rot = intermediate[0:3,0:3]
+
+
+        #Calculating the displacement
+        #displacement = end point - start point represented in the world frame
+        displacement = int_disp
+
+
+        #Now use the method shown in class to determine the axis vector
+        S = 0.5 * (int_rot - int_rot.T) #skew symmetric part of R
+        a1 = S[2,1]
+        a2 = S[0,2]
+        a3 = S[1,0]
+
+        axis = np.array([a1,a2,a3])
+
+        #rotate
+        axis = current[0:3,0:3]@axis #Return to the original axis
 
         ## END STUDENT CODE
 
@@ -101,8 +122,19 @@ class IK:
 
         ## STUDENT CODE STARTS HERE
 
-        distance = 0
-        angle = 0
+	#Intermediate homogenous
+        intermediate = np.linalg.inv(G)@H
+
+        #Seperating the rotation and displacement information
+        int_disp = G[0:3,3] - H[0:3,3]
+        int_rot = intermediate[0:3,0:3]
+
+        #finding the distance value:
+        distance = np.linalg.norm(int_disp) #taking the norm to find the distance
+
+        #now let us find the angle:
+        trace = np.trace(int_rot) #do we have to build in prevention?
+        angle = np.arccos(np.clip((trace-1)/2,-1,1))
 
         ## END STUDENT CODE
 
@@ -128,6 +160,16 @@ class IK:
         ## STUDENT CODE STARTS HERE
 
         success = False
+        distance, angle = IK.distance_and_angle(target, IK.fk.forward(q)[1])
+
+        if angle <= self.angular_tol: #Condition 3
+            if distance <= self.linear_tol: #Condition 2
+                success = True
+
+        for i in range(0,7): #condition 1
+            if q[i] > IK.upper[i] or q[i] < IK.lower[i]:
+                success = False
+                break
 
         ## END STUDENT CODE
 
@@ -156,6 +198,8 @@ class IK:
         ## STUDENT CODE STARTS HERE
 
         dq = np.zeros(7)
+        displacement, angle = IK.displacement_and_axis(target, IK.fk.forward(q)[1])
+        dq = IK_velocity(q, displacement, angle)
 
         ## END STUDENT CODE
 
@@ -228,9 +272,13 @@ class IK:
 
             # Task Prioritization
             dq = np.zeros(7) # TODO: implement me!
+            Jacobian = calcJacobian(q)
+            nullspaceJT = np.transpose(null_space(Jacobian))
+
+            dq = dq_ik + (nullspaceJT@dq_center) * nullspaceJT[0]
 
             # Termination Conditions
-            if True: # TODO: check termination conditions
+            if len(rollout) == self.max_steps or (np.abs(np.linalg.norm(dq)) < self.min_step_size): # TODO: check termination conditions
                 break # exit the while loop if conditions are met!
 
             ## END STUDENT CODE
